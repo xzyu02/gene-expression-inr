@@ -94,7 +94,7 @@ logging.basicConfig(filename='./brain_fitting.log', level=logging.INFO,
 
 def train(config):
     try:
-        output_dir = "./testing_exp"
+        output_dir = "./hansen_exp"
         test = False
         brain = BrainFitting(config.donor,
                              config.matter,
@@ -126,12 +126,16 @@ def train(config):
         total_steps = config.total_steps
         steps_til_summary = 50
         
-        # optim = schedulefree.AdamWScheduleFree(model.parameters(), lr=config.lr)
-        optim = torch.optim.Adam(lr=config.lr, params=model.parameters())
-        scheduler = torch.optim.lr_scheduler.StepLR(optim, step_size=1000, gamma=0.9)
+        if hasattr(config, 'schedule_free') and config.schedule_free:
+            optim = schedulefree.AdamWScheduleFree(model.parameters(), lr=config.lr)
+            optim.train()
+        else:
+            optim = torch.optim.Adam(lr=config.lr, params=model.parameters())
+            scheduler = torch.optim.lr_scheduler.StepLR(optim, step_size=1000, gamma=0.9)
         
         model_input, ground_truth = next(iter(train_dataloader))
         print(model_input.shape, ground_truth.shape)
+        # exit()
         model_input, ground_truth = model_input.to(device), ground_truth.to(device)
 
         prev_loss = 1
@@ -144,11 +148,15 @@ def train(config):
             # Validation step
             if test:
                 model.eval()
+                if hasattr(config, 'schedule_free') and config.schedule_free:
+                    optim.eval()
                 with torch.no_grad():
                     val_input, val_truth = val_data[0].to(device), val_data[1].to(device)
                     val_output, _ = model(val_input)
                     val_loss = torch.mean((val_output - val_truth) ** 2)
                 model.train()
+                if hasattr(config, 'schedule_free') and config.schedule_free:
+                    optim.train()
             
             if loss < prev_loss:
                 model_path_prefix = (
@@ -184,15 +192,20 @@ def train(config):
             # accelerator.backward(loss)
             loss.backward()
             optim.step()
-            scheduler.step()
+            if not (hasattr(config, 'schedule_free') and config.schedule_free):
+                scheduler.step()
 
         if test:
             model.eval()
+            if hasattr(config, 'schedule_free') and config.schedule_free:
+                optim.eval()
             with torch.no_grad():
                 test_input, test_truth = test_data[0].to(device), test_data[1].to(device)
                 test_output, _ = model(test_input)
                 test_loss = torch.mean((test_output - test_truth) ** 2)
             model.train()
+            if hasattr(config, 'schedule_free') and config.schedule_free:
+                optim.train()
 
             print(f"Final Test Loss: {test_loss:.6f}")
             wandb.log({"test_loss": test_loss.item()})
@@ -221,10 +234,9 @@ def train(config):
  
     
 def main():
-    # matter: 83 or 246 depends on different atlas
-    wandb.init(project="testing_exp", entity="yuxizheng", config={
+    wandb.init(project="hansen_exp_test", entity="yuxizheng", config={
         "nonlin": 'siren', # 'wire' 'gauss' 'mfn' 'relu' 'siren' 'wire2d' 'oinr3d'
-        "matter": "83_new",
+        "matter": "hansen_recommended",
         "gene_order": "se",
         "lr": 0.001,
         "hidden_layers": 12,
@@ -232,19 +244,20 @@ def main():
         "total_steps": 20000,
         "encoding_dim": 11,
         "donor": "9861",
-        "device": 'cuda',
+        "device": 'cuda' if torch.cuda.is_available() else 'cpu',
+        "schedule_free": False,
     })
     
     train(wandb.config)
-
+    exit(0)
+    
 def main_sweep():
-    with wandb.init(project="sweep_nov13", entity="yuxizheng") as run:
+    with wandb.init(project="hansen_exp", entity="yuxizheng") as run:
         config = run.config
-        
+
         run_name = f"{config.nonlin}_{config.donor}_{config.lr}_{config.encoding_dim}_{config.hidden_features}"
         
         run.name = run_name
-        run.save()
         
         train(wandb.config)
 

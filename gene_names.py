@@ -14,4 +14,4 @@ common_genes = genes_9861 & genes_10021
 print(f"Number of common genes: {len(common_genes)}")
 
 # Optional: save to file
-pd.Series(sorted(list(common_genes))).to_csv("common_genes_9861_10021.csv", index=False, header=False)
+pd.Series(sorted(list(common_genes))).to_csv("./data/common_gene_list.csv", index=False, header=False)

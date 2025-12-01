@@ -1,0 +1,29 @@
+sweep:
+  enabled: true
+  configuration:
+    method: "grid"
+    metric:
+      goal: "minimize"
+      name: "loss"
+    parameters:
+      nonlin:
+        values: ["siren"]
+      matter:
+        values: ["hansen_recommended", "hansen_full"]
+      gene_order:
+        values: ["se"]
+      lr:
+        values: [1e-3, 5e-4, 1e-4]
+      hidden_layers:
+        values: [12]
+      hidden_features:
+        values: [512]
+      total_steps:
+        values: [30000]
+      encoding_dim:
+        values: [11]
+      donor:
+        values: ["9861", "10021"]
+      schedule_free:
+        values: [true]
+  project: "hansen_experiments_sf"
