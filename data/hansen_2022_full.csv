@@ -1,0 +1,20 @@
+Gene_Symbol,Protein_Name_In_Paper,Validation_Set_Recommended,Full_Gene_Name,System
+DRD1,D1,No,Dopamine Receptor D1,Dopamine
+DRD2,D2,Yes,Dopamine Receptor D2,Dopamine
+SLC6A3,DAT,Yes,Solute Carrier Family 6 Member 3,Dopamine
+SLC6A2,NET,No,Solute Carrier Family 6 Member 2,Norepinephrine
+HTR1A,5-HT1A,Yes,5-Hydroxytryptamine Receptor 1A,Serotonin
+HTR1B,5-HT1B,No,5-Hydroxytryptamine Receptor 1B,Serotonin
+HTR2A,5-HT2A,No,5-Hydroxytryptamine Receptor 2A,Serotonin
+HTR4,5-HT4,No,5-Hydroxytryptamine Receptor 4,Serotonin
+HTR6,5-HT6,No,5-Hydroxytryptamine Receptor 6,Serotonin
+SLC6A4,5-HTT,Yes,Solute Carrier Family 6 Member 4,Serotonin
+CHRNA4,a4b2,No,Cholinergic Receptor Nicotinic Alpha 4 Subunit,Acetylcholine
+CHRM1,M1,Yes,Cholinergic Receptor Muscarinic 1,Acetylcholine
+SLC18A3,VAChT,Yes,Solute Carrier Family 18 Member A3,Acetylcholine
+GRIN1,NMDA,Yes,Glutamate Ionotropic Receptor NMDA Type Subunit 1,Glutamate
+GRM5,mGluR5,Yes,Glutamate Metabotropic Receptor 5,Glutamate
+GABRA1,GABA-A/BZ,No,Gamma-Aminobutyric Acid Type A Receptor Subunit Alpha1,GABA
+HRH3,H3,No,Histamine Receptor H3,Histamine
+CNR1,CB1,Yes,Cannabinoid Receptor 1,Cannabinoid
+OPRM1,MOR,Yes,Opioid Receptor Mu 1,Opioid
