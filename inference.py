@@ -49,7 +49,11 @@ def get_result(id, xyz, model, all_records):
         min_max_dict_df = min_max_dict_df[min_max_dict_df['id'] == str(id)]   
     else:
         min_max_dict_df = min_max_dict_df[min_max_dict_df['id'] == 'ALL_RECORDS'] 
-    min_max_dict = min_max_dict_df.to_dict(orient='records')[0]
+    
+    records = min_max_dict_df.to_dict(orient='records')
+    if len(records) > 1:
+        print(f"Warning: Found {len(records)} records for id {'ALL_RECORDS' if all_records else id}. Using the last one.")
+    min_max_dict = records[-1]
 
     min_vals = torch.tensor(min_max_dict['min_vals'])
     max_vals = torch.tensor(min_max_dict['max_vals'])
