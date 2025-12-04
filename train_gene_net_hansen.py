@@ -94,13 +94,33 @@ logging.basicConfig(filename='./brain_fitting.log', level=logging.INFO,
 
 def train(config):
     try:
-        output_dir = "./hansen_exp"
+        output_dir = "./hansen_ckpts"
+        os.makedirs(output_dir, exist_ok=True)
+        
         test = False
         brain = BrainFitting(config.donor,
                              config.matter,
                              config.gene_order, 
                              config.encoding_dim,
                              test=test)
+
+        min_max_dict = {
+            'id': 'ALL_RECORDS',
+            'min_vals': 0.0,
+            'max_vals': 1.0,
+            'min_coords': brain.min_coords.numpy().item(),
+            'max_coords': brain.max_coords.numpy().item(),
+            'exp_name': config.matter,
+            'donor': config.donor
+        }
+            
+        with open(f'{output_dir}/max_min_values_{config.gene_order}_sep.csv', 'a') as file:
+            writer = csv.writer(file)
+            row = [str(value) for value in min_max_dict.values()]
+            writer.writerow(row)
+
+        exit(0)
+
         if test:
             val_data = brain.get_val_data()
             test_data = brain.get_test_data()
@@ -139,7 +159,6 @@ def train(config):
         model_input, ground_truth = model_input.to(device), ground_truth.to(device)
 
         prev_loss = 1
-        os.makedirs(output_dir, exist_ok=True)
 
         for step in range(total_steps):
             model_output, coords = model(model_input)
@@ -159,11 +178,12 @@ def train(config):
                     optim.train()
             
             if loss < prev_loss:
+                sf_suffix = "_sf" if hasattr(config, 'schedule_free') and config.schedule_free else ""
                 model_path_prefix = (
                     f"{output_dir}/{config.nonlin}_{config.matter}_{config.donor}_{config.lr}_"
                     f"{5 + 2 * config.encoding_dim}x"
                     f"{config.hidden_features}x"
-                    f"{config.hidden_layers}_"
+                    f"{config.hidden_layers}{sf_suffix}_"
                 )
                 
                 old_model = f"{model_path_prefix}{prev_loss}.pth"   
@@ -210,19 +230,6 @@ def train(config):
             print(f"Final Test Loss: {test_loss:.6f}")
             wandb.log({"test_loss": test_loss.item()})
         
-        min_max_dict = {
-            'id': 'ALL_RECORDS',
-            'min_vals': 0.0,
-            'max_vals': 1.0,
-            'min_coords': brain.min_coords.numpy().item(),
-            'max_coords': brain.max_coords.numpy().item()
-        }
-            
-        with open(f'{output_dir}/max_min_values_{config.gene_order}_sep.csv', 'a') as file:
-            writer = csv.writer(file)
-            row = [str(value) for value in min_max_dict.values()]
-            writer.writerow(row)
-            
         logging.info(f"[Success]--{config.gene_order}")
 
     except Exception as e:
@@ -244,7 +251,7 @@ def main():
         "total_steps": 20000,
         "encoding_dim": 11,
         "donor": "9861",
-        "device": 'cuda' if torch.cuda.is_available() else 'cpu',
+        "device": 'cuda',
         "schedule_free": False,
     })
     

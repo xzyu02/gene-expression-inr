@@ -70,8 +70,12 @@ def get_pc1_se_results(donor, input_matter, output_dir, gene_list):
         print(f"Donor {donor} - Missing genes ({len(missing_genes)}): ", list(missing_genes)[:10], "...")
     
     gene_names = gene_names - missing_genes
-    # use gene_names to get a gene dataframe
     gene_names = list(gene_names)
+
+    gene_output_path = os.path.join(output_dir, f"{input_matter}_genes_{donor}.csv")
+    pd.DataFrame(gene_names, columns=['gene_symbol']).to_csv(gene_output_path, index=False)
+    print(f"Saved {gene_output_path}")
+
     gene_df = microarray_df.loc[gene_names]
 
     # PCA
@@ -150,6 +154,8 @@ if __name__ == "__main__":
     print(f"Found {len(full_genes)} total genes in Hansen.")
     print(f"Found {len(recommended_genes)} recommended genes in Hansen.")
     print(f"Found {len(common_genes)} genes in common_gene_list.")
+
+    # TODO
 
     # Union with common_gene_list
     full_genes = list(set(full_genes).union(set(common_genes)))

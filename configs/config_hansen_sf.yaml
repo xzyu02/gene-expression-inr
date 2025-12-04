@@ -13,13 +13,13 @@ sweep:
       gene_order:
         values: ["se"]
       lr:
-        values: [1e-3, 5e-4, 1e-4]
+        values: [5e-5]
       hidden_layers:
         values: [12]
       hidden_features:
         values: [512]
       total_steps:
-        values: [30000]
+        values: [100000]
       encoding_dim:
         values: [11]
       donor:
