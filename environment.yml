@@ -26,3 +26,5 @@ dependencies:
     - nibabel
     - ipyniivue
     - pysurfer
+    - nilearn
+    

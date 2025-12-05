@@ -9,7 +9,7 @@ sweep:
       nonlin:
         values: ["siren"]
       matter:
-        values: ["hansen_recommended", "hansen_full"]
+        values: ["hansen_full_pca", "hansen_full", "hansen_recommended"]
       gene_order:
         values: ["se"]
       lr:

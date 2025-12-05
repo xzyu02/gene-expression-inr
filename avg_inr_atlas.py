@@ -3,14 +3,29 @@ import numpy as np
 from tqdm import tqdm
 import pandas as pd
 import os
+import argparse
 
-def avg_atlas(gene_atlas_path, atlas, donor, matter):
-    input_path = f'./nii_{donor}_{matter}/{gene_atlas_path}.nii.gz'
-    output_path = f'./nii_{donor}_{matter}/{gene_atlas_path}_avg.nii.gz'
-    # if os.path.exists(output_path):
-    #     return
-    # if not os.path.exists(input_path):
-    #     return
+def parse_args():
+    parser = argparse.ArgumentParser(description="Average INR Atlas processing")
+    parser.add_argument('--mode', type=str, choices=['avg_atlas', 'avg_nii'], default='avg_atlas', help='Operation mode')
+    parser.add_argument('--matter', type=str, default='83_new', help='Matter type (e.g., 83_new)')
+    parser.add_argument('--donor', type=str, default='9861', help='Donor ID')
+    parser.add_argument('--atlas', type=str, default='atlas-desikankilliany', help='Atlas name')
+    parser.add_argument('--all_records', action='store_true', help='Use full records naming convention (inrs vs inr)')
+    parser.add_argument('--gene_list', type=str, help='Path to gene list CSV')
+    parser.add_argument('--input_dir', type=str, help='Input directory for avg_atlas mode')
+    
+    # Arguments for avg_nii
+    parser.add_argument('--nii1_dir', type=str, help='First directory for NIfTI files (avg_nii mode)')
+    parser.add_argument('--nii2_dir', type=str, help='Second directory for NIfTI files (avg_nii mode)')
+    parser.add_argument('--output_dir', type=str, help='Output directory')
+    
+    return parser.parse_args()
+
+def avg_atlas(gene_atlas_path, atlas, donor, matter, input_dir, output_dir):
+    input_path = os.path.join(input_dir, f'{gene_atlas_path}.nii.gz')
+    output_path = os.path.join(output_dir, f'{gene_atlas_path}_avg.nii.gz')
+    
     atlas_with_labels = nib.load(f'./data/atlas/{atlas}.nii.gz')
     atlas_with_genes = nib.load(input_path)
 
@@ -40,12 +55,9 @@ def avg_atlas(gene_atlas_path, atlas, donor, matter):
     # print(f"Interpolated {output_path} Success!")
     return avg_map
 
-def average_2_nii_files(gene, output_file):
-    try:
-        nii1 = nib.load(os.path.join('result_ibf_2full+mirror_TT/nii_9861_83_new', gene))
-        nii2 = nib.load(os.path.join('result_ibf_2full+mirror_TT/nii_10021_83_new', gene))
-    except:
-        print(f"Error: {gene}")
+def average_2_nii_files(file1, file2, output_file):
+    nii1 = nib.load(file1)
+    nii2 = nib.load(file2)
 
     data1 = nii1.get_fdata()
     data2 = nii2.get_fdata()
@@ -61,55 +73,60 @@ def average_2_nii_files(gene, output_file):
     avg_img = nib.Nifti1Image(avg_data, affine=nii1.affine, header=nii1.header)
 
     # Save the new NIfTI image
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
     nib.save(avg_img, output_file)
 
+def main():
+    args = parse_args()
 
-with open("./data/gene_names.csv") as f:
-    gene_names = f.readlines()
-    gene_names = [x.strip() for x in gene_names]
+    if not args.gene_list:
+        raise ValueError("Please provide --gene_list")
+    df = pd.read_csv(args.gene_list)
     
-gene_names = list(set(gene_names))
-gene_names.sort()
-
-matter = "83_new" # "246"
-donor = "9861"
-# atlas = "BN_Atlas_246_1mm"
-atlas = "atlas-desikankilliany"
-full_records = True
-df = pd.read_csv(f"./data/abagendata/train_{matter}/se_{donor}.csv")
-os.makedirs(f"./nii_{donor}_{matter}", exist_ok=True)
-genes_data = {}
-
-# for i, row in tqdm(df.iterrows(), total=df.shape[0]):
-#     id = row['gene_symbol']
-#     path = f"{id}_{matter}_inr"
-    
-#     if full_records:
-#         path = f"{id}_{matter}_inrs"
+    if args.mode == 'avg_atlas':
+        if not args.input_dir:
+            raise ValueError("For avg_atlas mode, please provide --input_dir")
+        input_dir = args.input_dir
+        output_dir = args.output_dir if args.output_dir else input_dir
         
-#     avg_map = avg_atlas(path, atlas, donor, matter)
-#     genes_data[id] = avg_map
+        os.makedirs(output_dir, exist_ok=True)
+        genes_data = {}
 
-for i, row in tqdm(df.iterrows(), total=df.shape[0]):
-    id = row['gene_symbol']
-    path = f"{id}_{matter}_inrs.nii.gz"
-    average_2_nii_files(path, f"result_ibf_2full+mirror_TT/nii_inrs/{path}.nii.gz")
+        for i, row in tqdm(df.iterrows(), total=df.shape[0]):
+            id = row['gene_symbol']
+            path = f"{id}_{args.matter}_inr"
+                
+            avg_map = avg_atlas(path, args.atlas, args.donor, args.matter, input_dir=input_dir, output_dir=output_dir)
+            genes_data[id] = avg_map
+            
+        # Save results
+        df_res = pd.DataFrame(genes_data)
+        df_res.index.name = 'label'
+        df_res = df_res.sort_index(axis=1)
+        
+        suffix = "inrs" if args.all_records else "inr"
+        output_csv = os.path.join(output_dir, f'result_{args.matter}_{args.donor}_{suffix}_avg.csv')
 
+        df_res.to_csv(output_csv)
+        print(f"Saved average atlas data to {output_csv}")
 
-# df = pd.DataFrame(genes_data)
-# df.index.name = 'label'
-# df = df.sort_index(axis=1)
-# if full_records:
-#     df.to_csv(f'./data/result_{matter}_{donor}_inrs_avg.csv')
-# else:
-#     df.to_csv(f'./data/result_{matter}_{donor}_inr_avg.csv')
+    elif args.mode == 'avg_nii':
+        if not args.nii1_dir or not args.nii2_dir or not args.output_dir:
+            print("Error: For avg_nii mode, please provide --nii1_dir, --nii2_dir, and --output_dir")
+            return
 
+        os.makedirs(args.output_dir, exist_ok=True)
+        
+        for i, row in tqdm(df.iterrows(), total=df.shape[0]):
+            id = row['gene_symbol']
+            # Construct filename based on convention
+            filename = f"{id}_{args.matter}_inr.nii.gz"
+            
+            file1 = os.path.join(args.nii1_dir, filename)
+            file2 = os.path.join(args.nii2_dir, filename)
+            output_file = os.path.join(args.output_dir, filename)
+            
+            average_2_nii_files(file1, file2, output_file)
 
-
-
-# df_abagen = pd.read_csv(f"./data/{matter}_interpolation_abagen_full.csv")
-# gene_names.remove('NEAT')
-# df_abagen = df_abagen[gene_names]
-# df_abagen['label'] = range(1, len(df_abagen) + 1)
-# df_abagen.index = df_abagen['label']
-# df_abagen.to_csv(f'./data/{matter}_interpolation_abagen.csv')
+if __name__ == "__main__":
+    main()

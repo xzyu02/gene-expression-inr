@@ -13,3 +13,5 @@ sweep_nov13/
 oinr_results/
 models_new/
 models_test/
+slurm_logs/
+hansen_ckpts/

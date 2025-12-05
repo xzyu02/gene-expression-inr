@@ -119,8 +119,6 @@ def train(config):
             row = [str(value) for value in min_max_dict.values()]
             writer.writerow(row)
 
-        exit(0)
-
         if test:
             val_data = brain.get_val_data()
             test_data = brain.get_test_data()

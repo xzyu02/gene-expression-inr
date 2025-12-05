@@ -150,24 +150,33 @@ if __name__ == "__main__":
     print("Loading common gene list from ./data/common_gene_list.csv...")
     with open("./data/common_gene_list.csv", "r") as f:
         common_genes = [line.strip() for line in f if line.strip()]
+    
+    # Load PCA Hansen group genes
+    print("Loading PCA Hansen group genes from ./data/gene_lists/pca_hansen_group_genes.csv...")
+    pca_hansen_df = pd.read_csv("./data/gene_lists/pca_hansen_group_genes.csv", header=None)
+    pca_hansen_genes = pca_hansen_df[0].tolist()
 
     print(f"Found {len(full_genes)} total genes in Hansen.")
     print(f"Found {len(recommended_genes)} recommended genes in Hansen.")
     print(f"Found {len(common_genes)} genes in common_gene_list.")
+    print(f"Found {len(pca_hansen_genes)} genes in PCA Hansen group.")
 
     # TODO
 
     # Union with common_gene_list
     full_genes = list(set(full_genes).union(set(common_genes)))
     recommended_genes = list(set(recommended_genes).union(set(common_genes)))
+    full_pca_genes = list(set(full_genes).union(set(pca_hansen_genes)))
     
     print(f"After union with common_gene_list:")
     print(f"  Full genes: {len(full_genes)}")
     print(f"  Recommended genes: {len(recommended_genes)}")
+    print(f"  Full + PCA genes: {len(full_pca_genes)}")
 
     experiments = [
         ("hansen_full", full_genes),
-        ("hansen_recommended", recommended_genes)
+        ("hansen_recommended", recommended_genes),
+        ("hansen_full_pca", full_pca_genes)
     ]
 
     for exp_name, genes in experiments:
